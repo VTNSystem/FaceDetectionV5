@@ -28,4 +28,10 @@ namespace FaceDetection.Models
             Active = active;
         }
     }
+
+    public class AbUser
+    {
+        public string Username { get; set; }
+        public string FullName { get; set; }
+    }
 }

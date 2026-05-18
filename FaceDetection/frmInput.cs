@@ -105,7 +105,7 @@ namespace FaceDetection
             int err = 0;
             FSDK.SetFaceDetectionThreshold(5);
             FSDK.SetFaceDetectionParameters(true, true, 512);
-            if (FSDK.FSDKE_OK != FSDK.SetParameters("FaceDetectionModel=fd_masks1.bin;TrimFacesWithUncertainFacialFeatures=false", ref err))
+            if (FSDK.FSDKE_OK != FSDK.SetParameters("TrimFacesWithUncertainFacialFeatures=false", ref err))
             {
                 MessageBox.Show("Error loading face detection model!");
             }

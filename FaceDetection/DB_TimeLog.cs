@@ -45,6 +45,39 @@ namespace FaceDetection
                 .Replace("đ", "d").Replace("Đ", "D");
         }
 
+        public static List<Models.AbUser> GetAbUsers()
+        {
+            List<Models.AbUser> users = new List<Models.AbUser>();
+            if (Connected)
+            {
+                try
+                {
+                    using (SqlConnection connection = new SqlConnection(ConnectionString)) 
+                    {
+                        SqlCommand command = new SqlCommand();
+                        command.Connection = connection;
+                        command.CommandText = @""; //sql query here
+                        connection.Open();
+                        using (SqlDataReader reader = command.ExecuteReader()) 
+                        {
+                            while (reader.Read()) 
+                            {
+                                Models.AbUser user = new Models.AbUser();
+                                user.Username = reader.GetString(0);
+                                user.FullName = reader.GetString(1);
+                                users.Add(user);
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+
+                }
+            }
+            return users;
+        }
+
         public static List<Models.User> GetUsers()
         {
             List<Models.User> users = new List<Models.User>();
