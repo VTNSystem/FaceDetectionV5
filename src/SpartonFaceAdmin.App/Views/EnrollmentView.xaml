@@ -222,15 +222,31 @@
 
                 <!-- Employee Search + List -->
                 <StackPanel Grid.Row="1">
-                    <TextBlock Text="Nhân viên" Style="{StaticResource FieldLabel}" />
+                    <TextBlock Text="Nhân viên (hoặc nhập: MãNV - Tên không dấu)" Style="{StaticResource FieldLabel}" />
                     <TextBox Style="{StaticResource ModernTextBox}"
                              Text="{Binding EmployeeSearchText, UpdateSourceTrigger=PropertyChanged}"
-                             Tag="Tìm mã hoặc tên..."
+                             ToolTip="Tìm nhân viên hoặc nhập mới theo cú pháp: 0999 - Nguyen Van A"
                              Margin="0,0,0,6" />
+                    <Border Background="{StaticResource BrandCyanSoftBrush}"
+                            BorderBrush="{StaticResource BrandCyanBrush}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="8,4"
+                            Margin="0,0,0,6"
+                            Visibility="{Binding HasManualEntry, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="{Binding ManualEntryBadge}"
+                                   Foreground="{StaticResource BrandNavyBrush}"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis" />
+                    </Border>
                     <ListBox ItemsSource="{Binding FilteredEmployees}"
                              SelectedItem="{Binding SelectedEmployee, Mode=TwoWay}"
                              DisplayMemberPath="DisplayLabel"
-                             Height="168"
+                             Height="160"
+                             ScrollViewer.CanContentScroll="True"
+                             VirtualizingPanel.IsVirtualizing="True"
+                             VirtualizingPanel.VirtualizationMode="Recycling"
                              BorderBrush="{StaticResource BorderSubtleBrush}"
                              BorderThickness="1"
                              FontSize="13" />

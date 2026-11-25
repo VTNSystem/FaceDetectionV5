@@ -48,7 +48,9 @@ public sealed partial class FaceListViewModel : ObservableObject
     [ObservableProperty]
     private bool _isLoading;
 
-    public ObservableCollection<EmployeeItem> FilteredEmployees { get; } = new();
+    [ObservableProperty]
+    private IReadOnlyList<EmployeeItem> _filteredEmployees = Array.Empty<EmployeeItem>();
+
     public ObservableCollection<FaceRecordSummary> FaceRecords { get; } = new();
 
     public FaceListViewModel(
@@ -65,8 +67,25 @@ public sealed partial class FaceListViewModel : ObservableObject
         SaveFolderPath = _appState.Settings.ExportImageFolder;
         ExcelFilePath = _appState.Settings.ExportExcelPath;
 
-        _appState.EmployeesUpdated += () => Application.Current.Dispatcher.Invoke(ApplyFilter);
+        _appState.EmployeesUpdated += OnEmployeesUpdated;
         ApplyFilter();
+    }
+
+    private void OnEmployeesUpdated()
+    {
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            ApplyFilter();
+            if (SelectedEmployee != null)
+            {
+                _ = LoadEmployeeFacesAsync(SelectedEmployee);
+            }
+            else
+            {
+                FaceRecords.Clear();
+                ClearPreviews();
+            }
+        });
     }
 
     public async Task OnNavigatedToAsync()
@@ -106,7 +125,6 @@ public sealed partial class FaceListViewModel : ObservableObject
         string q = (SearchText ?? string.Empty).Trim();
         string qAscii = VietnameseTextHelper.VniToEng(q);
 
-        FilteredEmployees.Clear();
         IEnumerable<EmployeeItem> source = _appState.Employees;
         if (!string.IsNullOrEmpty(q))
         {
@@ -116,11 +134,14 @@ public sealed partial class FaceListViewModel : ObservableObject
                 e.AsciiFullName.Contains(qAscii, StringComparison.OrdinalIgnoreCase));
         }
 
-        foreach (var item in source)
-            FilteredEmployees.Add(item);
+        var updated = source.ToList();
+        FilteredEmployees = updated;
 
         if (!string.IsNullOrEmpty(prevCode))
-            SelectedEmployee = FilteredEmployees.FirstOrDefault(x => x.EmployeeCode == prevCode);
+        {
+            SelectedEmployee = updated.FirstOrDefault(x =>
+                string.Equals(x.EmployeeCode, prevCode, StringComparison.OrdinalIgnoreCase));
+        }
     }
 
     private async Task LoadEmployeeFacesAsync(EmployeeItem? employee)

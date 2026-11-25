@@ -175,7 +175,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void Save()
+    private async Task SaveAsync()
     {
         AppSettings s = _appState.Settings;
 
@@ -193,11 +193,28 @@ public sealed partial class SettingsViewModel : ObservableObject
 
         s.Camera = BuildCameraSettings();
         _appState.SaveSettings();
-        _toast.Show("Đã lưu cài đặt.", ToastKind.Success);
+
+        IsTesting = true;
+        try
+        {
+            await _appState.NotifySettingsSavedAsync();
+            if (!_appState.IsHrConnected && !_appState.IsFaceConnected)
+            {
+                _toast.Show("Đã lưu cài đặt, nhưng chưa kết nối được DB.", ToastKind.Warning, 3200);
+            }
+            else
+            {
+                _toast.Show("Đã lưu cài đặt & cập nhật dữ liệu.", ToastKind.Success);
+            }
+        }
+        finally
+        {
+            IsTesting = false;
+        }
     }
 
     [RelayCommand]
-    private void ResetDefaults()
+    private async Task ResetDefaultsAsync()
     {
         if (MessageBox.Show("Khôi phục toàn bộ cài đặt về mặc định ban đầu?", "Xác nhận",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
@@ -208,6 +225,16 @@ public sealed partial class SettingsViewModel : ObservableObject
         _appState.Settings = new AppSettings();
         _appState.SaveSettings();
         ReloadFromAppState();
+
+        IsTesting = true;
+        try
+        {
+            await _appState.NotifySettingsSavedAsync();
+        }
+        finally
+        {
+            IsTesting = false;
+        }
         _toast.Show("Đã khôi phục mặc định.", ToastKind.Info);
     }
 

@@ -1,6 +1,8 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using SpartonFaceAdmin.App.Services;
+using SpartonFaceAdmin.Core.Models;
+using SpartonFaceAdmin.Core.Utilities;
 using SpartonFaceAdmin.Infrastructure.Data;
 
 namespace SpartonFaceAdmin.App.ViewModels;
@@ -47,6 +49,8 @@ public sealed partial class MainViewModel : ObservableObject
         FaceListVm = faceListVm;
         SettingsVm = settingsVm;
         _currentViewModel = enrollmentVm;
+
+        _appState.SettingsSavedAsync += RefreshEmployeesAndHealthAsync;
     }
 
     public async Task InitializeAsync()
@@ -92,25 +96,69 @@ public sealed partial class MainViewModel : ObservableObject
         _appState.IsHrConnected = hrOk;
         _appState.IsFaceConnected = faceOk;
 
-        if (!hrOk)
-            return;
+        var merged = new List<EmployeeItem>();
 
         try
         {
-            var employees = await _hrRepo.GetEmployeesAsync(_appState.Settings.HrDatabase, activeOnly: true);
+            Dictionary<string, FaceRepository.FaceCodeAggregate>? aggregates = null;
             if (faceOk)
             {
-                var counts = await _faceRepo.GetEmployeeFaceCountsAsync(_appState.Settings.FaceDatabase);
-                foreach (var emp in employees)
+                aggregates = await _faceRepo.GetEmployeeFaceAggregatesAsync(_appState.Settings.FaceDatabase);
+            }
+
+            if (hrOk)
+            {
+                var hrEmployees = await _hrRepo.GetEmployeesAsync(_appState.Settings.HrDatabase, activeOnly: true);
+                var seenCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var emp in hrEmployees)
                 {
-                    if (counts.TryGetValue(emp.EmployeeCode, out int c))
-                        emp.FaceCount = c;
+                    seenCodes.Add(emp.EmployeeCode);
+                    if (aggregates != null && aggregates.TryGetValue(emp.EmployeeCode, out var agg))
+                        emp.FaceCount = agg.Total;
+                    merged.Add(emp);
+                }
+
+                if (aggregates != null)
+                {
+                    foreach (var agg in aggregates.Values.OrderBy(a => a.Code, StringComparer.OrdinalIgnoreCase))
+                    {
+                        if (seenCodes.Contains(agg.Code))
+                            continue;
+
+                        merged.Add(new EmployeeItem
+                        {
+                            EmployeeCode = agg.Code,
+                            FullName = agg.Fullname,
+                            AsciiFullName = VietnameseTextHelper.VniToEng(agg.Fullname),
+                            Active = true,
+                            IsManualOnly = true,
+                            FaceCount = agg.Total
+                        });
+                    }
                 }
             }
-            _appState.ReplaceEmployees(employees);
+            else if (aggregates != null)
+            {
+                foreach (var agg in aggregates.Values.OrderBy(a => a.Code, StringComparer.OrdinalIgnoreCase))
+                {
+                    merged.Add(new EmployeeItem
+                    {
+                        EmployeeCode = agg.Code,
+                        FullName = agg.Fullname,
+                        AsciiFullName = VietnameseTextHelper.VniToEng(agg.Fullname),
+                        Active = true,
+                        IsManualOnly = true,
+                        FaceCount = agg.Total
+                    });
+                }
+            }
+
+            _appState.ReplaceEmployees(merged);
         }
         catch (Exception ex)
         {
+            _appState.ReplaceEmployees(Array.Empty<EmployeeItem>());
             Toast.Show($"Không tải được danh sách nhân viên: {ex.Message}", ToastKind.Warning);
         }
     }

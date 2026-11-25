@@ -21,6 +21,7 @@ public sealed partial class AppStateService : ObservableObject
     public ObservableCollection<EmployeeItem> Employees { get; } = new();
 
     public event Action? EmployeesUpdated;
+    public event Func<Task>? SettingsSavedAsync;
 
     public AppStateService(DpapiSettingsStore settingsStore)
     {
@@ -30,12 +31,44 @@ public sealed partial class AppStateService : ObservableObject
 
     public void SaveSettings() => _settingsStore.Save(Settings);
 
+    public async Task NotifySettingsSavedAsync()
+    {
+        if (SettingsSavedAsync != null)
+        {
+            foreach (Func<Task> handler in SettingsSavedAsync.GetInvocationList().Cast<Func<Task>>())
+            {
+                await handler();
+            }
+        }
+    }
+
     public void ReplaceEmployees(IReadOnlyList<EmployeeItem> items)
     {
         Employees.Clear();
         foreach (var item in items)
             Employees.Add(item);
         EmployeesUpdated?.Invoke();
+    }
+
+    public EmployeeItem UpsertManualEmployee(string code, string displayName, string asciiFullName)
+    {
+        var existing = Employees.FirstOrDefault(e =>
+            string.Equals(e.EmployeeCode, code, StringComparison.OrdinalIgnoreCase));
+        if (existing != null)
+            return existing;
+
+        var added = new EmployeeItem
+        {
+            EmployeeCode = code,
+            FullName = displayName,
+            AsciiFullName = asciiFullName,
+            Active = true,
+            IsManualOnly = true,
+            FaceCount = 0
+        };
+        Employees.Insert(0, added);
+        EmployeesUpdated?.Invoke();
+        return added;
     }
 }
 

@@ -40,10 +40,9 @@
 
     <BooleanToVisibilityConverter x:Key="BoolToVis" />
 
-    <!-- Default Window Typography -->
+    <!-- Default Window Typography (keep Foreground unset so buttons inherit white Foreground properly) -->
     <Style TargetType="TextBlock">
         <Setter Property="FontFamily" Value="Segoe UI" />
-        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
     </Style>
 
     <!-- Card Container -->
@@ -72,7 +71,9 @@
                             Background="{TemplateBinding Background}"
                             CornerRadius="7"
                             Padding="{TemplateBinding Padding}">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <ContentPresenter HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          TextElement.Foreground="{TemplateBinding Foreground}" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
@@ -110,7 +111,9 @@
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="7"
                             Padding="{TemplateBinding Padding}">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <ContentPresenter HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          TextElement.Foreground="{TemplateBinding Foreground}" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
@@ -136,7 +139,9 @@
                             Background="{TemplateBinding Background}"
                             CornerRadius="7"
                             Padding="{TemplateBinding Padding}">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <ContentPresenter HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          TextElement.Foreground="{TemplateBinding Foreground}" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
@@ -171,7 +176,9 @@
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="6"
                             Padding="{TemplateBinding Padding}">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <ContentPresenter HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          TextElement.Foreground="{TemplateBinding Foreground}" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="True">
@@ -253,15 +260,27 @@
         </Setter>
     </Style>
 
-    <!-- Clean ComboBox -->
+    <!-- Clean ComboBox with UI Virtualization & Bounded DropDown Height -->
     <Style x:Key="ModernComboBox" TargetType="ComboBox">
         <Setter Property="Height" Value="36" />
         <Setter Property="FontSize" Value="13.5" />
         <Setter Property="Padding" Value="10,0" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="Background" Value="White" />
+        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderSubtleBrush}" />
         <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="MaxDropDownHeight" Value="320" />
+        <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
+        <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True" />
+        <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <VirtualizingStackPanel IsItemsHost="True" />
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- Field Label -->

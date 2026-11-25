@@ -22,7 +22,10 @@ WHERE [Code] = @Code
 ORDER BY [ID] DESC";
 
     private const string SelectFaceCountsSql = @"
-SELECT [Code] AS Code, COUNT(1) AS Total
+SELECT
+    [Code] AS Code,
+    MAX([Fullname]) AS Fullname,
+    COUNT(1) AS Total
 FROM [dbo].[FaceList]
 GROUP BY [Code]";
 
@@ -55,7 +58,9 @@ SELECT CAST(SCOPE_IDENTITY() AS int);";
     private const string DeleteByCodeSql = "DELETE FROM [dbo].[FaceList] WHERE [Code] = @Code";
     private const string InsertLogSql = "INSERT INTO [dbo].[Logs] ([Message], [Type], [CreatedDate]) VALUES (@Message, @Type, GETDATE())";
 
-    public async Task<Dictionary<string, int>> GetEmployeeFaceCountsAsync(
+    public sealed record FaceCodeAggregate(string Code, string Fullname, int Total);
+
+    public async Task<Dictionary<string, FaceCodeAggregate>> GetEmployeeFaceAggregatesAsync(
         DatabaseConnectionSettings settings,
         CancellationToken cancellationToken = default)
     {
@@ -66,11 +71,14 @@ SELECT CAST(SCOPE_IDENTITY() AS int);";
             new CommandDefinition(SelectFaceCountsSql, commandTimeout: Math.Clamp(settings.TimeoutSeconds * 3, 5, 60), cancellationToken: cancellationToken))
             .ConfigureAwait(false);
 
-        var dict = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var dict = new Dictionary<string, FaceCodeAggregate>(StringComparer.OrdinalIgnoreCase);
         foreach (var r in rows)
         {
             if (!string.IsNullOrWhiteSpace(r.Code))
-                dict[r.Code.Trim()] = r.Total;
+            {
+                string code = r.Code.Trim();
+                dict[code] = new FaceCodeAggregate(code, r.Fullname?.Trim() ?? string.Empty, r.Total);
+            }
         }
         return dict;
     }
@@ -193,6 +201,7 @@ SELECT CAST(SCOPE_IDENTITY() AS int);";
     private sealed class FaceCountRow
     {
         public string Code { get; set; } = string.Empty;
+        public string? Fullname { get; set; }
         public int Total { get; set; }
     }
 }

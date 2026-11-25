@@ -25,6 +25,27 @@ public sealed class CompatibilityAndExportTests
     }
 
     [Fact]
+    public void TryParseManualEmployeeInput_ParsesValidAndRejectsInvalidInputs()
+    {
+        Assert.True(VietnameseTextHelper.TryParseManualEmployeeInput(
+            "0999 - Nguyễn Văn Mới", out string code1, out string display1, out string ascii1));
+        Assert.Equal("0999", code1);
+        Assert.Equal("Nguyễn Văn Mới", display1);
+        Assert.Equal("Nguyen Van Moi", ascii1);
+
+        Assert.True(VietnameseTextHelper.TryParseManualEmployeeInput(
+            "1050 - Tran Van A - B", out string code2, out string display2, out string ascii2));
+        Assert.Equal("1050", code2);
+        Assert.Equal("Tran Van A - B", display2);
+        Assert.Equal("Tran Van A - B", ascii2);
+
+        Assert.False(VietnameseTextHelper.TryParseManualEmployeeInput("0999", out _, out _, out _));
+        Assert.False(VietnameseTextHelper.TryParseManualEmployeeInput("0999 - ", out _, out _, out _));
+        Assert.False(VietnameseTextHelper.TryParseManualEmployeeInput(" - Nguyen Van A", out _, out _, out _));
+        Assert.False(VietnameseTextHelper.TryParseManualEmployeeInput(null, out _, out _, out _));
+    }
+
+    [Fact]
     public void DpapiSettingsStore_RoundTripsSecretsSafely()
     {
         string tempFile = Path.Combine(Path.GetTempPath(), $"sparton_cfg_{Guid.NewGuid():N}.json");

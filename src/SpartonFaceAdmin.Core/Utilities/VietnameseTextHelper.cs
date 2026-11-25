@@ -62,4 +62,37 @@ public static class VietnameseTextHelper
         string cleaned = sb.ToString().Trim();
         return string.IsNullOrEmpty(cleaned) ? "Unknown" : cleaned;
     }
+
+    /// <summary>
+    /// Parses manual employee input in legacy format "Code - Name" (e.g. "0999 - Nguyen Van A").
+    /// </summary>
+    public static bool TryParseManualEmployeeInput(
+        string? rawInput,
+        out string code,
+        out string displayName,
+        out string asciiFullName)
+    {
+        code = string.Empty;
+        displayName = string.Empty;
+        asciiFullName = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(rawInput))
+            return false;
+
+        int sepIdx = rawInput.IndexOf('-');
+        if (sepIdx <= 0 || sepIdx >= rawInput.Length - 1)
+            return false;
+
+        string parsedCode = rawInput[..sepIdx].Trim();
+        string parsedName = rawInput[(sepIdx + 1)..].Trim();
+        string ascii = VniToEng(parsedName);
+
+        if (string.IsNullOrWhiteSpace(parsedCode) || string.IsNullOrWhiteSpace(ascii))
+            return false;
+
+        code = parsedCode;
+        displayName = parsedName;
+        asciiFullName = ascii;
+        return true;
+    }
 }

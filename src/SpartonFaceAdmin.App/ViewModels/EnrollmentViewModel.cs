@@ -27,6 +27,7 @@ public sealed partial class EnrollmentViewModel : ObservableObject
 
     private CameraSessionRunner? _cameraRunner;
     private CancellationTokenSource? _detectLoopCts;
+    private CancellationTokenSource? _faceListLoadCts;
     private WriteableBitmap? _liveWriteableBitmap;
     private byte[]? _loadedFileBytes;
     private bool _suppressScalePersist;
@@ -83,7 +84,14 @@ public sealed partial class EnrollmentViewModel : ObservableObject
     [ObservableProperty]
     private string _similarThresholdText = "0.9988";
 
-    public ObservableCollection<EmployeeItem> FilteredEmployees { get; } = new();
+    [ObservableProperty]
+    private IReadOnlyList<EmployeeItem> _filteredEmployees = Array.Empty<EmployeeItem>();
+
+    [ObservableProperty]
+    private string _manualEntryBadge = string.Empty;
+
+    public bool HasManualEntry => !string.IsNullOrEmpty(ManualEntryBadge);
+
     public ObservableCollection<FaceRecordSummary> SelectedEmployeeFaces { get; } = new();
     public IReadOnlyList<string> Groups => UserGroupOption.All;
 
@@ -121,17 +129,48 @@ public sealed partial class EnrollmentViewModel : ObservableObject
             ApplyEmployeeFilter();
             if (!string.IsNullOrEmpty(currentCode))
             {
-                SelectedEmployee = FilteredEmployees.FirstOrDefault(x => x.EmployeeCode == currentCode)
-                                   ?? FilteredEmployees.FirstOrDefault();
+                SelectedEmployee = FilteredEmployees.FirstOrDefault(x =>
+                    string.Equals(x.EmployeeCode, currentCode, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (SelectedEmployee != null)
+            {
+                _ = LoadFacesByCodeAsync(SelectedEmployee.EmployeeCode);
+            }
+            else
+            {
+                SelectedEmployeeFaces.Clear();
+                UpdateManualEntryState();
             }
         });
     }
 
-    partial void OnEmployeeSearchTextChanged(string value) => ApplyEmployeeFilter();
+    partial void OnManualEntryBadgeChanged(string value) => OnPropertyChanged(nameof(HasManualEntry));
+
+    partial void OnEmployeeSearchTextChanged(string value)
+    {
+        if (SelectedEmployee != null &&
+            VietnameseTextHelper.TryParseManualEmployeeInput(value, out string typedCode, out _, out _) &&
+            !string.Equals(typedCode, SelectedEmployee.EmployeeCode, StringComparison.OrdinalIgnoreCase))
+        {
+            SelectedEmployee = null;
+        }
+
+        ApplyEmployeeFilter();
+        UpdateManualEntryState();
+    }
 
     partial void OnSelectedEmployeeChanged(EmployeeItem? value)
     {
-        _ = LoadSelectedEmployeeFacesAsync(value);
+        if (value != null)
+        {
+            ManualEntryBadge = string.Empty;
+            _ = LoadFacesByCodeAsync(value.EmployeeCode);
+        }
+        else
+        {
+            UpdateManualEntryState();
+        }
     }
 
     partial void OnHasFaceMaskChanged(bool value)
@@ -182,7 +221,6 @@ public sealed partial class EnrollmentViewModel : ObservableObject
         string q = (EmployeeSearchText ?? string.Empty).Trim();
         string qAscii = VietnameseTextHelper.VniToEng(q);
 
-        FilteredEmployees.Clear();
         IEnumerable<EmployeeItem> source = _appState.Employees;
         if (!string.IsNullOrEmpty(q))
         {
@@ -192,8 +230,26 @@ public sealed partial class EnrollmentViewModel : ObservableObject
                 e.AsciiFullName.Contains(qAscii, StringComparison.OrdinalIgnoreCase));
         }
 
-        foreach (var emp in source)
-            FilteredEmployees.Add(emp);
+        FilteredEmployees = source.ToList();
+    }
+
+    private void UpdateManualEntryState()
+    {
+        if (SelectedEmployee == null &&
+            VietnameseTextHelper.TryParseManualEmployeeInput(EmployeeSearchText, out string code, out _, out string ascii))
+        {
+            ManualEntryBadge = $"Nhập tay: {code} - {ascii}";
+            _ = LoadFacesByCodeAsync(code);
+        }
+        else
+        {
+            ManualEntryBadge = string.Empty;
+            if (SelectedEmployee == null)
+            {
+                _faceListLoadCts?.Cancel();
+                SelectedEmployeeFaces.Clear();
+            }
+        }
     }
 
     [RelayCommand]
@@ -414,9 +470,28 @@ public sealed partial class EnrollmentViewModel : ObservableObject
         if (IsBusy)
             return;
 
-        if (SelectedEmployee == null)
+        string targetCode;
+        string targetDisplayName;
+        string targetAsciiName;
+        bool isManualEntry = false;
+
+        if (SelectedEmployee != null)
         {
-            _toast.Show("Vui lòng chọn nhân viên trước khi lưu.", ToastKind.Warning);
+            targetCode = SelectedEmployee.EmployeeCode;
+            targetDisplayName = SelectedEmployee.FullName;
+            targetAsciiName = SelectedEmployee.AsciiFullName;
+        }
+        else if (VietnameseTextHelper.TryParseManualEmployeeInput(
+                     EmployeeSearchText,
+                     out targetCode,
+                     out targetDisplayName,
+                     out targetAsciiName))
+        {
+            isManualEntry = true;
+        }
+        else
+        {
+            _toast.Show("Chọn nhân viên hoặc nhập: MãNV - Tên không dấu", ToastKind.Warning);
             return;
         }
 
@@ -459,11 +534,10 @@ public sealed partial class EnrollmentViewModel : ObservableObject
                 return;
             }
 
-            var emp = SelectedEmployee;
             var insertReq = new FaceRecordInsertRequest
             {
-                Code = emp.EmployeeCode,
-                Fullname = emp.AsciiFullName,
+                Code = targetCode,
+                Fullname = targetAsciiName,
                 Group = SelectedGroup,
                 FacePositionXc = extracted.FaceBox.Xc,
                 FacePositionYc = extracted.FaceBox.Yc,
@@ -481,11 +555,21 @@ public sealed partial class EnrollmentViewModel : ObservableObject
             };
 
             await _faceRepo.InsertFaceRecordAsync(_appState.Settings.FaceDatabase, insertReq);
-            _ = _faceRepo.WriteAuditLogAsync(_appState.Settings.FaceDatabase, $"Added user ({emp.EmployeeCode} - {emp.AsciiFullName})");
+            _ = _faceRepo.WriteAuditLogAsync(_appState.Settings.FaceDatabase, $"Added user ({targetCode} - {targetAsciiName})");
 
-            emp.FaceCount += 1;
-            await LoadSelectedEmployeeFacesAsync(emp);
-            _toast.Show($"Đã lưu khuôn mặt cho {emp.EmployeeCode} - {emp.FullName}", ToastKind.Success);
+            if (isManualEntry)
+            {
+                var manualEmp = _appState.UpsertManualEmployee(targetCode, targetDisplayName, targetAsciiName);
+                manualEmp.FaceCount += 1;
+                SelectedEmployee = manualEmp;
+            }
+            else if (SelectedEmployee != null)
+            {
+                SelectedEmployee.FaceCount += 1;
+            }
+
+            await LoadFacesByCodeAsync(targetCode);
+            _toast.Show($"Đã lưu khuôn mặt cho {targetCode} - {targetDisplayName}", ToastKind.Success);
         }
         catch (Exception ex)
         {
@@ -514,7 +598,7 @@ public sealed partial class EnrollmentViewModel : ObservableObject
             await _faceRepo.DeleteByIdAsync(_appState.Settings.FaceDatabase, record.Id);
             if (SelectedEmployee != null && SelectedEmployee.FaceCount > 0)
                 SelectedEmployee.FaceCount -= 1;
-            await LoadSelectedEmployeeFacesAsync(SelectedEmployee);
+            await LoadFacesByCodeAsync(record.Code);
             _toast.Show($"Đã xóa mẫu #{record.Id}", ToastKind.Info);
         }
         catch (Exception ex)
@@ -523,18 +607,27 @@ public sealed partial class EnrollmentViewModel : ObservableObject
         }
     }
 
-    private async Task LoadSelectedEmployeeFacesAsync(EmployeeItem? emp)
+    private async Task LoadFacesByCodeAsync(string? code)
     {
+        _faceListLoadCts?.Cancel();
+        _faceListLoadCts?.Dispose();
+        _faceListLoadCts = new CancellationTokenSource();
+        CancellationToken ct = _faceListLoadCts.Token;
+
         SelectedEmployeeFaces.Clear();
-        if (emp == null || !_appState.IsFaceConnected)
+        if (string.IsNullOrWhiteSpace(code) || !_appState.IsFaceConnected)
             return;
 
         try
         {
-            var rows = await _faceRepo.GetFaceSummariesByCodeAsync(_appState.Settings.FaceDatabase, emp.EmployeeCode);
+            var rows = await _faceRepo.GetFaceSummariesByCodeAsync(_appState.Settings.FaceDatabase, code, ct);
+            if (ct.IsCancellationRequested)
+                return;
+
             foreach (var r in rows)
                 SelectedEmployeeFaces.Add(r);
         }
+        catch (OperationCanceledException) { }
         catch
         {
             // Keep UI smooth if FaceDB is temporarily unreachable.

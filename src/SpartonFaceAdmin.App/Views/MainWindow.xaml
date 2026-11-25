@@ -11,6 +11,7 @@
         MinHeight="680"
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource AppBgBrush}"
+        Foreground="{StaticResource TextPrimaryBrush}"
         Icon="pack://application:,,,/Assets/face-locker-icon.ico">
     <Window.Resources>
         <conv:EnumEqualsConverter x:Key="EnumEquals" />
