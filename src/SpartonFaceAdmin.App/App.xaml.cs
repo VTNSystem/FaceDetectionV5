@@ -22,10 +22,10 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
-        _singleInstanceMutex = new Mutex(true, "SpartonFaceAdmin_SingleInstance_Mutex", out bool isFirst);
+        _singleInstanceMutex = new Mutex(true, "SpartronicsFaceDetection_SingleInstance_Mutex", out bool isFirst);
         if (!isFirst)
         {
-            MessageBox.Show("Sparton Face Admin đang chạy.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("Spartronics Face Detection đang chạy.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
             Shutdown();
             return;
         }
