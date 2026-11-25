@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <AssemblyName>SpartonFaceAdmin</AssemblyName>
+    <ApplicationIcon>..\..\FaceDetection\face-locker-icon.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+    <PackageReference Include="Serilog" Version="4.1.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SpartonFaceAdmin.Contracts\SpartonFaceAdmin.Contracts.csproj" />
+    <ProjectReference Include="..\SpartonFaceAdmin.Core\SpartonFaceAdmin.Core.csproj" />
+    <ProjectReference Include="..\SpartonFaceAdmin.Infrastructure\SpartonFaceAdmin.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="..\..\FaceDetection\Resources\spartronics-logo.png" Link="Assets\spartronics-logo.png" />
+    <Resource Include="..\..\FaceDetection\face-locker-icon.ico" Link="Assets\face-locker-icon.ico" />
+  </ItemGroup>
+</Project>

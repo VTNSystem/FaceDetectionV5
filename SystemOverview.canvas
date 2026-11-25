@@ -1,0 +1,430 @@
+{
+  "nodes": [
+    {
+      "id": "grp-entry",
+      "type": "group",
+      "x": 0,
+      "y": 0,
+      "width": 860,
+      "height": 420,
+      "color": "5",
+      "label": "1. ENTRY POINT, NAVIGATION & AUTH"
+    },
+    {
+      "id": "grp-active",
+      "type": "group",
+      "x": 0,
+      "y": 480,
+      "width": 860,
+      "height": 740,
+      "color": "4",
+      "label": "2. CAC PROCESS ADMIN DANG HOAT DONG"
+    },
+    {
+      "id": "grp-kiosk",
+      "type": "group",
+      "x": 960,
+      "y": 0,
+      "width": 920,
+      "height": 1220,
+      "color": "5",
+      "label": "3. CORE KIOSK PIPELINE (frmRecognition -> frmRecognizeTask) [CANH BAO: NUT VAO DANG BI AN]"
+    },
+    {
+      "id": "grp-external",
+      "type": "group",
+      "x": 1980,
+      "y": 0,
+      "width": 760,
+      "height": 1220,
+      "color": "6",
+      "label": "4. EXTERNAL SYSTEMS, HARDWARE & STORAGE"
+    },
+    {
+      "id": "grp-dead",
+      "type": "group",
+      "x": 0,
+      "y": 1300,
+      "width": 1320,
+      "height": 580,
+      "color": "1",
+      "label": "5. PROCESS KHONG CON HOAT DONG / DEAD CODE / REGRESSION BUGS"
+    },
+    {
+      "id": "grp-upgrade",
+      "type": "group",
+      "x": 1400,
+      "y": 1300,
+      "width": 1340,
+      "height": 580,
+      "color": "2",
+      "label": "6. NGUYEN NHAN DO CUNG MAY & KIEN TRUC NANG CAP DE XUAT (V6)"
+    },
+
+    {
+      "id": "node-program",
+      "type": "text",
+      "x": 30,
+      "y": 50,
+      "width": 360,
+      "height": 150,
+      "color": "5",
+      "text": "### Program.cs + frmMain.cs\n- Single-instance bằng `Mutex`\n- MDI Container (`FormBorderStyle = None`, chặn Alt+F4)\n- `frmMain_Load`: mở `frmHome`, check HR DB async, **gọi đồng bộ `LoadFaceList()` trên UI thread**\n- Top bar: chỉ `pbHome` hoạt động (`pbFullScreen` bị comment)"
+    },
+    {
+      "id": "node-home",
+      "type": "text",
+      "x": 450,
+      "y": 50,
+      "width": 380,
+      "height": 165,
+      "color": "5",
+      "text": "### frmHome.cs (Menu chính)\n- `btnSettings` -> `frmSettings`\n- `btnAddUser` -> `frmInput`\n- `btnRollCall` -> `frmUser` *(KHÔNG mở frmRollCall)*\n- `btnExit` -> `Application.Exit()`\n- `lblAdmin` -> `frmAuthenticate`\n- ⚠️ `btnRecognition.Visible = false` (bị ẩn)\n- ⚠️ `AdminGrated()` bị comment -> menu hiện sẵn"
+    },
+    {
+      "id": "node-auth",
+      "type": "text",
+      "x": 450,
+      "y": 245,
+      "width": 380,
+      "height": 150,
+      "color": "3",
+      "text": "### frmAuthenticate.cs (Admin Login)\n- Cách 1: Nhận diện mặt vs `AdminUsers` (`FaceList WHERE Code IN (...)`)\n- Cách 2: User `admin` / Pass `DateTime.Now.ToString(\"MMddyy\")`\n- ⚠️ Vòng lặp camera chạy trên UI thread + `GC.Collect()` + `DoEvents()`"
+    },
+
+    {
+      "id": "node-input",
+      "type": "text",
+      "x": 30,
+      "y": 530,
+      "width": 380,
+      "height": 320,
+      "color": "4",
+      "text": "### frmInput.cs (Đăng ký khuôn mặt)\n- Load nhân viên từ `DB_TimeLog.GetUsers()`\n- Chọn User, Group (`Office/Operator/Security/Outside Services`), Mask (0.9994 / 0.9988)\n- Bấm `lblMessage` để mở camera (USB / IP / DCAM710)\n- Rê chuột vào mặt + click (`MouseUp`) -> trích xuất `Template`, `Image`, `FaceImage` -> `INSERT FaceList`\n- Nút `Remove` -> `DELETE FaceList WHERE Code=...`\n- ⚠️ Không reload `frmMain.FaceList` sau khi lưu\n- ⚠️ Vòng lặp camera block UI thread + leak GDI+"
+    },
+    {
+      "id": "node-user",
+      "type": "text",
+      "x": 440,
+      "y": 530,
+      "width": 390,
+      "height": 340,
+      "color": "4",
+      "text": "### frmUser.cs + FaceListExcelLog.cs\n*(Mở từ nút `btnRollCall` trên frmHome)*\n- Load user Active vào `cbbUserList`\n- Quản lý bản ghi `FaceList`: xóa theo `ID` hoặc xóa tất cả theo `Code`\n- **Tính năng mới (`f3b2172`)**: Review ảnh Full/Face, lưu ảnh `{Code} - {FullName}.jpg` và append dòng vào `.xlsx` (ClosedXML) để in thẻ nhân viên\n- Nút `btnSync`: gọi `FailedDataHandler.Sync()`\n- 🔴 **REGRESSION BUG**: Mất event `cbbUserList_SelectedIndexChanged` -> chọn user không load grid!"
+    },
+    {
+      "id": "node-settings",
+      "type": "text",
+      "x": 30,
+      "y": 890,
+      "width": 800,
+      "height": 300,
+      "color": "4",
+      "text": "### frmSettings.cs (Cấu hình hệ thống - Properties.Settings)\n- **SQL Server (HR/TimeLog & FaceRecognition)**: Server, DB, User, Password (Base64), Timeout + nút Test đồng bộ\n- **Modbus TCP**: IP (`172.16.64.124`), Port (`502`), Timeout (`100ms`) + nút Test\n- **Door Schedule**: `AlwayCloseDoor` vs `OptionalOpenDoor` với 4 khung giờ (`Range1..4`)\n- **Camera**: USB index/format, IP Camera MJPEG (URL/User/Pass/Timeout), `UseDCAM710`, `TurnOffCamera` (23h-5h)\n- **Recognition**: `Threshold` (0.9988), `SmilePassed` (90%), `DoorTimeout` (5s), `InOutMode`, `Permission`, `AllowFaceMask`, `OnlyFaceMask`, `UseEmoji`, `PicturePath`, `ReportPath`, `AdminUsers`\n- ⚠️ Tự động `Save()` khi đóng form (không có Cancel); các field `.dat` (`FaceDataPath`, `ExtentDataPath`, `MemoryLimit`, `Learning`, `DetectionThreshold`, `FailedMessage`) **không còn tác dụng**"
+    },
+
+    {
+      "id": "node-recog-shell",
+      "type": "text",
+      "x": 990,
+      "y": 50,
+      "width": 860,
+      "height": 170,
+      "color": "5",
+      "text": "### frmRecognition.cs (Màn hình chờ Kiosk)\n- Slideshow wallpaper (`timerPhotoSlider`: 30 phút) + đồng hồ (`timerClock`: 1s)\n- Bấm `pbPower` -> mở `frmRecognizeTask.ShowDialog()`\n- Tự động gọi `pbPower_Click` vào giây `00` mỗi phút (5h-23h nếu bật `TurnOffCamera`, ngược lại 24/7)\n- Tự động gọi `FailedDataHandler.Sync()` mỗi giờ lúc phút `21:00` *(chạy đồng bộ trên UI thread!)*"
+    },
+    {
+      "id": "node-recog-init",
+      "type": "text",
+      "x": 990,
+      "y": 260,
+      "width": 410,
+      "height": 230,
+      "color": "5",
+      "text": "### frmRecognizeTask: Khởi tạo\n- Load `mUsers` (HR DB) + `FaceList` (Face DB)\n- Lọc thêm theo bảng `FaceTest` (`LoadFaceListTest()`)\n- `Config()`: setup `doorTimer`, mở Modbus TCP trên `BackgroundWorker`\n- `Shown`: `BackgroundWorker` nạp model `fd_masks1.bin`, mở Camera (DCAM710 / IP MJPEG / USB)\n- `RunWorkerCompleted`: gọi `RunSingle()` **ngay trên UI thread!**"
+    },
+    {
+      "id": "node-recog-timers",
+      "type": "text",
+      "x": 1440,
+      "y": 260,
+      "width": 410,
+      "height": 230,
+      "color": "3",
+      "text": "### Các Timer trong frmRecognizeTask\n- `timerBlockUI` (2s): chặn nhận diện lặp trên UI\n- `timerClock` (1s): cập nhật giờ + gọi `FailedDataHandler.Sync()` lúc `00:00` mỗi giờ *(UI thread)*\n- `timerDoor` (5s): focus `txtBarcodeScanner` + kiểm tra 4 khung giờ mở/đóng cửa *(⚠️ bug xung đột nhiều khung giờ)*\n- `doorTimer` (`System.Timers.Timer`): đóng cửa sau `DoorTimeout` giây *(⚠️ race condition trên `modbusClient`)*"
+    },
+    {
+      "id": "node-recog-loop",
+      "type": "text",
+      "x": 990,
+      "y": 530,
+      "width": 860,
+      "height": 310,
+      "color": "5",
+      "text": "### Vòng lặp chính: RunSingle() [CHẠY TRÊN UI THREAD]\n1. **Grab Frame**: `FSDKCam.GrabFrame()` (USB/IP) hoặc `Ps2_ReadNextFrame`/`Ps2_GetFrame` (DCAM710)\n2. **Detect & Extract**: `DetectFace()` -> `CopyRect()` *(dư thừa)* -> `DetectFacialFeaturesInRegion()` -> `GetFaceTemplateInRegion()` *(gọi cả khi không có mặt!)*\n3. **Expression**: nếu `!AllowFaceMask` -> tính `Smile%` & `EyesOpen%`; nếu `AllowFaceMask` -> ép `100%`\n4. **Match (`w > 250 || h > 250`)**: gọi `frmMain.GoSearchFace()` quét tuyến tính O(N) toàn bộ `FaceList` qua `FSDK.MatchFaces()`\n5. **Render UI**: crop mặt + `Resize(1.2)` + vẽ chữ lên `pbCamera`; vẽ `pbEmoji` *(đọc file từ đĩa mỗi frame nếu bật)*\n6. **Housekeeping**: reset UI sau 1s idle; tự đóng camera sau 120s idle (23h-5h); lưu ảnh report nếu bấm `pbReport`; **gọi `GC.Collect()` + `Application.DoEvents()` MỖI FRAME!**"
+    },
+    {
+      "id": "node-recog-action",
+      "type": "text",
+      "x": 990,
+      "y": 880,
+      "width": 860,
+      "height": 300,
+      "color": "4",
+      "text": "### HandleDetection() -> Hành động khi nhận diện thành công\n- **Điều kiện**: `!timerBlockUI.Enabled` && User `Active` && `mPermission.Contains(group)` && `smile >= smilePassed`\n- **Mở cửa (Modbus TCP)**: `OpenDoor()` kết nối TCP -> `WriteMultipleCoils(29, {true, true, true})` -> ngắt kết nối -> start `doorTimer` *(đồng bộ trên UI thread, lỗi thì retry ngay!)*\n- **Phản hồi**: Phát `Resources/access-door.wav` (fallback `Console.Beep`), đổi nền xanh + lời chào In/Out, bật `timerBlockUI` (2s)\n- **Chống trùng 300s (`insertedList`)**: Chỉ nhóm `Office` / `Operator` được chấm công\n- **Ghi chấm công (Async `Task.Factory.StartNew`)**: `DB_TimeLog.InsertData()` -> `TA_TimeLog`; ghi log vào `FaceRecognition.Logs` (fallback `log4net`); **nếu lỗi ghi ra `logs/failed_data.txt`**\n- **Lưu ảnh bằng chứng (Sync)**: `SaveEvidence()` -> `.appdata/evidence/yyyy/MM/dd/...jpg`"
+    },
+
+    {
+      "id": "node-db-hr",
+      "type": "text",
+      "x": 2010,
+      "y": 50,
+      "width": 700,
+      "height": 210,
+      "color": "6",
+      "text": "### SQL Server 1: HR & TimeLog (`DB_TimeLog.cs`)\n- Mặc định: `10.64.8.60` / `abriDBHRPro7_Ver3_SPARTON`\n- **Đọc**: `HR_Employee` (`GetUsers()`), `TA_TimeLog` (`GetRollCall()` - dead)\n- **Ghi**: `INSERT INTO TA_TimeLog` (`EmployeeATID`, `Time`, `MachineSerial`, `InOutMode`, ...)\n- ⚠️ SQL Injection & format ngày `datetime.ToString()` theo locale trong `InsertData()`"
+    },
+    {
+      "id": "node-db-face",
+      "type": "text",
+      "x": 2010,
+      "y": 290,
+      "width": 700,
+      "height": 220,
+      "color": "6",
+      "text": "### SQL Server 2: FaceRecognition (`frmMain`, `frmInput`, `frmUser`)\n- Mặc định: `10.64.8.150` / `FaceRecognition`\n- Bảng `FaceList`: `ID`, `Code`, `Fullname`, `Group`, tọa độ mặt/mắt, `Template` (binary), `Image` (JPEG), `FaceImage` (JPEG), `SimilarThreshold`, `HasFaceMask`, `CreatedDate`\n- Bảng `FaceTest`: danh sách mã nhân viên test (lọc bỏ mẫu có khẩu trang)\n- Bảng `Logs`: ghi log hoạt động & lỗi từ các máy kiosk"
+    },
+    {
+      "id": "node-hw-camera",
+      "type": "text",
+      "x": 2010,
+      "y": 540,
+      "width": 700,
+      "height": 200,
+      "color": "6",
+      "text": "### Camera Inputs & Luxand FaceSDK 7.0\n- `FaceSDK.NET.dll` (54 MB, AMD64) + model `fd_masks1.bin` *(không kèm trong repo)*\n- Nguồn 1: **USB Webcam** (`FSDKCam.OpenVideoCamera`)\n- Nguồn 2: **IP Camera MJPEG** (`FSDKCam.OpenIPVideoCamera`, `172.16.64.123`)\n- Nguồn 3: **DCAM710 RGBD** (`DCAM710Handler.cs` -> P/Invoke `vzense_api.dll`, không có DLL trong repo)"
+    },
+    {
+      "id": "node-hw-modbus",
+      "type": "text",
+      "x": 2010,
+      "y": 770,
+      "width": 700,
+      "height": 170,
+      "color": "6",
+      "text": "### Bộ điều khiển cửa (Modbus TCP)\n- Thư viện: `EasyModbus.dll` (`172.16.64.124:502`, timeout `100ms`)\n- Điều khiển 3 coil từ địa chỉ `29`: `{true, true, true}` (mở) / `{false, false, false}` (đóng)\n- ⚠️ Mở/đóng TCP connection mới mỗi lần thao tác, không có thread synchronization"
+    },
+    {
+      "id": "node-local-files",
+      "type": "text",
+      "x": 2010,
+      "y": 970,
+      "width": 700,
+      "height": 220,
+      "color": "6",
+      "text": "### Local Files & Exports\n- `logs/failed_data.txt`: Hàng đợi chấm công lỗi (`code;datetime;mode`), đọc/ghi bởi `FailedDataHandler`\n- `logs/info.log`: `log4net` RollingFileAppender (5x10MB, fallback khi SQL Logs lỗi)\n- `.appdata/evidence/yyyy/MM/dd/*.jpg`: Ảnh bằng chứng (thư mục ẩn)\n- `Reports/yyyyMMdd/*.jpg`: Ảnh nhân viên bấm nút Report\n- Export in thẻ: `{SaveFolder}/{Code} - {FullName}.jpg` + `.xlsx` (`FaceListExcelLog`)"
+    },
+
+    {
+      "id": "node-dead-forms",
+      "type": "text",
+      "x": 30,
+      "y": 1350,
+      "width": 400,
+      "height": 240,
+      "color": "1",
+      "text": "### Forms & Luồng bị ngắt / Dead\n1. **Kiosk Recognition bị khóa đường vào**: `frmMain` mở `frmHome`, còn `frmHome.btnRecognition.Visible = false` (không có chỗ nào bật lại)\n2. **`frmRollCall.cs`**: Dead form 100%, không nơi nào khởi tạo (`btnRollCall` mở `frmUser`)\n3. **`frmProgress.cs`**: Dead form 100%, không ai gọi\n4. **`pbFullScreen_Click`**: Event rỗng (bị comment)"
+    },
+    {
+      "id": "node-dead-features",
+      "type": "text",
+      "x": 460,
+      "y": 1350,
+      "width": 410,
+      "height": 240,
+      "color": "1",
+      "text": "### Tính năng bị tắt / Legacy bỏ xó\n1. **Barcode Scanner (`HandleDetectionFromBarcode`)**: Bị comment trong `txtBarcodeScanner_KeyDown`\n2. **Double-Check 2 frame**: Bị comment trong `RunSingle()`\n3. **Admin Login Gate & Timeout 30 phút**: Bị comment trong `frmHome_Load`\n4. **Luxand `.dat` Tracker cũ**: `GetMultipleParameter`, `SetIdentifier`, `GetNameFromIdentifier`, `ExtentDataPath`, `MemoryLimit`, `Learning`, `DetectionThreshold`, `FailedMessage` đều vô tác dụng (nhưng `frmUser`/`frmAuthenticate` vẫn copy `.dat` thừa!)"
+    },
+    {
+      "id": "node-dead-libs",
+      "type": "text",
+      "x": 900,
+      "y": 1350,
+      "width": 390,
+      "height": 240,
+      "color": "1",
+      "text": "### DLL, Method thừa & Bug mới nhất\n1. 🔴 **Bug commit `f3b2172` (`frmUser`)**: Mất `cbbUserList_SelectedIndexChanged` -> chọn user không load danh sách ảnh\n2. **`lib/nmodbuspc.dll`**: Reference thừa (chỉ dùng `EasyModbus`)\n3. **`DB_TimeLog.GetAbUsers()` + `AbUser`**: SQL rỗng, không dùng\n4. **Dead methods**: `frmMain.GetDateTimeFromServer()`, `frmRecognizeTask.checkDoorConnection()`, `frmInput.SaveImage()`, `frmUser.StringToPattern()`"
+    },
+    {
+      "id": "node-security-bugs",
+      "type": "text",
+      "x": 30,
+      "y": 1620,
+      "width": 1260,
+      "height": 230,
+      "color": "1",
+      "text": "### Lỗi Logic, Bảo mật & Vận hành nghiêm trọng\n- **SQL Injection**: Nối chuỗi trực tiếp trong `DB_TimeLog.InsertData`, `RemoveFaceInDB`, `RemoveFaceByCode`, `RemoveFaceByID`, `getListFaceByUsername`, `LoadAdminFaceList`\n- **Credentials yếu**: Password SQL lưu Base64, IP Camera plaintext (`Sparton2019`), Admin password hardcode theo ngày (`MMddyy`), License key hardcode\n- **Bug `timerDoor_Tick`**: Khi bật >1 khung giờ mở cửa, khối `else` của khung giờ này sẽ đóng cửa đang mở của khung giờ khác -> cửa đóng mở liên tục mỗi 5s\n- **UX gây kẹt Kiosk**: Hiện `MessageBox.Show()` giữa vòng lặp nhận diện (lỗi camera/report) làm treo cứng kiosk không có người bấm"
+    },
+
+    {
+      "id": "node-freeze-causes",
+      "type": "text",
+      "x": 1430,
+      "y": 1350,
+      "width": 620,
+      "height": 500,
+      "color": "2",
+      "text": "### 5 Nguyên nhân chính gây ĐƠ CỨNG MÁY\n1. **Camera Loop + AI chạy trên UI Thread**:\n   - `RunSingle()`, `frmInput.Run()`, `frmAuthenticate.Run()` là vòng lặp `while` chạy ngay trên UI thread\n   - Gọi **`GC.Collect()`** (Stop-The-World Full GC) & **`Application.DoEvents()`** trên MỖI FRAME -> chiếm 100% CPU, đóng băng UI, re-entrancy\n2. **Rò rỉ GDI+ & Unmanaged Memory cực nặng**:\n   - Không `Dispose()` `Bitmap`, `Graphics`, `Pen`, `Brush`, `Font`, `FSDK.CImage`, `pbCamera.Image` cũ\n   - `Image.FromFile()` đọc đĩa mỗi frame cho Emoji\n   - `Marshal.AllocHGlobal` (DCAM710) không giải phóng -> chạm trần 10,000 GDI handles -> treo/crash\n3. **Blocking Network / SQL / Disk I/O trên UI Thread**:\n   - `OpenDoor()` (Modbus TCP + retry + SQL log), `LoadFaceList()`, `FailedDataHandler.Sync()`, `SaveEvidence()` đều chạy đồng bộ trên UI thread\n4. **Quét tuyến tính `O(N)` đơn luồng**:\n   - `GoSearchFace()` so khớp tuần tự toàn bộ `FaceList` trên UI thread; vẫn chạy extract template ngay cả khi không có khuôn mặt (`w == 0`)\n5. **Race condition trên `modbusClient`**:\n   - UI thread (`OpenDoor`) và ThreadPool (`doorTimer` -> `CloseDoor`) dùng chung socket không `lock`"
+    },
+    {
+      "id": "node-v6-arch",
+      "type": "text",
+      "x": 2090,
+      "y": 1350,
+      "width": 620,
+      "height": 500,
+      "color": "3",
+      "text": "### Đề xuất Kiến trúc Nâng cấp V6 (Mượt - Ổn định - Dễ dùng)\n1. **Tách Pipeline Đa luồng (Bỏ 100% `DoEvents` & `GC.Collect`)**:\n   - *Capture Thread*: đọc frame vào 1-slot buffer (drop frame cũ -> preview luôn mượt 30 FPS)\n   - *AI Worker*: chỉ extract khi có mặt đạt chuẩn, song song hóa matching (`Parallel`/Vector search), cân nhắc nâng cấp ONNX/InsightFace\n   - *Async I/O Service (`Channel<T>`)*: Modbus (có `SemaphoreSlim` + auto-reconnect), SQL chấm công, lưu ảnh Evidence hoàn toàn ngoài UI thread\n2. **Quản lý tài nguyên chuẩn**:\n   - `using` toàn bộ GDI+/SQL/native handles; tái sử dụng buffer; preload tài nguyên tĩnh 1 lần\n3. **Offline Queue bền vững**:\n   - Thay `logs/failed_data.txt` bằng **SQLite (WAL)** + Background Retry Worker có backoff\n4. **Hiện đại hóa UI/UX (.NET 8 WPF/WinForms)**:\n   - Tách rõ **Kiosk Mode** (không bao giờ hiện `MessageBox`, tự phục hồi camera/mạng, hiển thị health bar) và **Admin Tool** (chụp đăng ký có hướng dẫn, tìm kiếm realtime, sửa bug `frmUser`, Save/Cancel rõ ràng)\n5. **Bảo mật & Dữ liệu**:\n   - Parameterized SQL (Dapper/EF Core), Windows DPAPI cho secrets, Admin auth chuẩn (hashed password / DB)"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-prog-home",
+      "fromNode": "node-program",
+      "fromSide": "right",
+      "toNode": "node-home",
+      "toSide": "left",
+      "label": "SetMdiChild(frmHome)"
+    },
+    {
+      "id": "e-home-auth",
+      "fromNode": "node-home",
+      "fromSide": "bottom",
+      "toNode": "node-auth",
+      "toSide": "top",
+      "label": "lblAdmin"
+    },
+    {
+      "id": "e-home-input",
+      "fromNode": "node-home",
+      "fromSide": "bottom",
+      "toNode": "node-input",
+      "toSide": "top",
+      "label": "btnAddUser"
+    },
+    {
+      "id": "e-home-user",
+      "fromNode": "node-home",
+      "fromSide": "bottom",
+      "toNode": "node-user",
+      "toSide": "top",
+      "label": "btnRollCall -> frmUser"
+    },
+    {
+      "id": "e-home-settings",
+      "fromNode": "node-home",
+      "fromSide": "left",
+      "toNode": "node-settings",
+      "toSide": "left",
+      "label": "btnSettings"
+    },
+    {
+      "id": "e-home-recog",
+      "fromNode": "node-home",
+      "fromSide": "right",
+      "toNode": "node-recog-shell",
+      "toSide": "left",
+      "color": "1",
+      "label": "btnRecognition (BI AN!)"
+    },
+    {
+      "id": "e-shell-init",
+      "fromNode": "node-recog-shell",
+      "fromSide": "bottom",
+      "toNode": "node-recog-init",
+      "toSide": "top",
+      "label": "ShowDialog() / Auto-start"
+    },
+    {
+      "id": "e-init-loop",
+      "fromNode": "node-recog-init",
+      "fromSide": "bottom",
+      "toNode": "node-recog-loop",
+      "toSide": "top",
+      "label": "RunWorkerCompleted -> UI Thread"
+    },
+    {
+      "id": "e-timers-loop",
+      "fromNode": "node-recog-timers",
+      "fromSide": "bottom",
+      "toNode": "node-recog-loop",
+      "toSide": "top",
+      "label": "BlockUI / Clock / Door Schedule"
+    },
+    {
+      "id": "e-loop-action",
+      "fromNode": "node-recog-loop",
+      "fromSide": "bottom",
+      "toNode": "node-recog-action",
+      "toSide": "top",
+      "label": "Matched Face -> HandleDetection()"
+    },
+    {
+      "id": "e-init-hr",
+      "fromNode": "node-recog-init",
+      "fromSide": "right",
+      "toNode": "node-db-hr",
+      "toSide": "left",
+      "label": "GetUsers()"
+    },
+    {
+      "id": "e-init-face",
+      "fromNode": "node-recog-init",
+      "fromSide": "right",
+      "toNode": "node-db-face",
+      "toSide": "left",
+      "label": "LoadFaceList() + FaceTest"
+    },
+    {
+      "id": "e-loop-cam",
+      "fromNode": "node-recog-loop",
+      "fromSide": "right",
+      "toNode": "node-hw-camera",
+      "toSide": "left",
+      "label": "GrabFrame / FaceSDK"
+    },
+    {
+      "id": "e-action-modbus",
+      "fromNode": "node-recog-action",
+      "fromSide": "right",
+      "toNode": "node-hw-modbus",
+      "toSide": "left",
+      "label": "OpenDoor / CloseDoor (Coil 29)"
+    },
+    {
+      "id": "e-action-hr",
+      "fromNode": "node-recog-action",
+      "fromSide": "right",
+      "toNode": "node-db-hr",
+      "toSide": "left",
+      "label": "Async INSERT TA_TimeLog"
+    },
+    {
+      "id": "e-action-files",
+      "fromNode": "node-recog-action",
+      "fromSide": "right",
+      "toNode": "node-local-files",
+      "toSide": "left",
+      "label": "Evidence / Failed Queue / Logs"
+    },
+    {
+      "id": "e-freeze-upgrade",
+      "fromNode": "node-freeze-causes",
+      "fromSide": "right",
+      "toNode": "node-v6-arch",
+      "toSide": "left",
+      "color": "4",
+      "label": "Giải pháp nâng cấp"
+    }
+  ]
+}

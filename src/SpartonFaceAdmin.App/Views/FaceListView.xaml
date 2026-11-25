@@ -1,0 +1,169 @@
+<UserControl x:Class="SpartonFaceAdmin.App.Views.FaceListView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:SpartonFaceAdmin.App.Converters">
+    <UserControl.Resources>
+        <conv:MaskLabelConverter x:Key="MaskLabel" />
+        <conv:InverseBoolToVisConverter x:Key="InverseBoolToVis" />
+        <conv:NullToVisibilityConverter x:Key="NullToVis" />
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="14" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Top Employee Filter Bar -->
+        <Border Grid.Row="0" Style="{StaticResource CardBorder}" Padding="14,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="240" />
+                    <ColumnDefinition Width="10" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBox Grid.Column="0"
+                         Style="{StaticResource ModernTextBox}"
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="Tìm mã hoặc tên nhân viên" />
+
+                <ComboBox Grid.Column="2"
+                          Style="{StaticResource ModernComboBox}"
+                          ItemsSource="{Binding FilteredEmployees}"
+                          SelectedItem="{Binding SelectedEmployee, Mode=TwoWay}"
+                          DisplayMemberPath="DisplayLabel" />
+
+                <Button Grid.Column="4"
+                        Content="Xóa tất cả"
+                        Style="{StaticResource DangerButton}"
+                        Command="{Binding DeleteAllForEmployeeCommand}"
+                        MinWidth="112" />
+            </Grid>
+        </Border>
+
+        <!-- Bottom Grid + Review/Export Panel -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="380" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Left DataGrid -->
+            <Border Grid.Column="0" Style="{StaticResource CardBorder}" Padding="12">
+                <DataGrid Style="{StaticResource ModernDataGrid}"
+                          ItemsSource="{Binding FaceRecords}"
+                          SelectedItem="{Binding SelectedRecord, Mode=TwoWay}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="70" />
+                        <DataGridTextColumn Header="Mã NV" Binding="{Binding Code}" Width="90" />
+                        <DataGridTextColumn Header="Họ tên" Binding="{Binding Fullname}" Width="*" />
+                        <DataGridTextColumn Header="Nhóm" Binding="{Binding Group}" Width="115" />
+                        <DataGridTextColumn Header="Khẩu trang" Binding="{Binding HasFaceMask, Converter={StaticResource MaskLabel}}" Width="90" />
+                        <DataGridTextColumn Header="Ngày tạo" Binding="{Binding CreatedDate, StringFormat='dd/MM/yyyy HH:mm'}" Width="140" />
+                        <DataGridTemplateColumn Header="Thao tác" Width="82">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="Xóa"
+                                            Style="{StaticResource SecondaryButton}"
+                                            Foreground="{StaticResource DangerBrush}"
+                                            Padding="10,3"
+                                            FontSize="12"
+                                            Command="{Binding DataContext.DeleteSingleCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+
+            <!-- Right Image Review & Card Export -->
+            <Border Grid.Column="2" Style="{StaticResource CardBorder}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="Xem ảnh &amp; Xuất thẻ" Style="{StaticResource SectionTitle}" Margin="0,0,0,10" />
+
+                    <!-- Full Image Preview -->
+                    <Grid Grid.Row="1" Margin="0,0,0,10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="Ảnh toàn cảnh" Style="{StaticResource FieldLabel}" />
+                        <Border Grid.Row="1" Background="#0B1324" CornerRadius="8" ClipToBounds="True">
+                            <Image Source="{Binding PreviewFullImage}"
+                                   Stretch="Uniform"
+                                   RenderOptions.BitmapScalingMode="HighQuality" />
+                        </Border>
+                    </Grid>
+
+                    <!-- Face Image Preview -->
+                    <Grid Grid.Row="2" Margin="0,0,0,12">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="Ảnh khuôn mặt" Style="{StaticResource FieldLabel}" />
+                        <Border Grid.Row="1" Background="#0B1324" CornerRadius="8" ClipToBounds="True">
+                            <Image Source="{Binding PreviewFaceImage}"
+                                   Stretch="Uniform"
+                                   RenderOptions.BitmapScalingMode="HighQuality" />
+                        </Border>
+                    </Grid>
+
+                    <!-- Export Folder & Excel -->
+                    <StackPanel Grid.Row="3">
+                        <TextBlock Text="Thư mục lưu ảnh" Style="{StaticResource FieldLabel}" />
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Style="{StaticResource ModernTextBox}" Text="{Binding SaveFolderPath, UpdateSourceTrigger=PropertyChanged}" />
+                            <Button Grid.Column="2" Content="Chọn..." Style="{StaticResource SecondaryButton}" Command="{Binding BrowseSaveFolderCommand}" />
+                        </Grid>
+
+                        <TextBlock Text="File Excel (.xlsx)" Style="{StaticResource FieldLabel}" />
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Style="{StaticResource ModernTextBox}" Text="{Binding ExcelFilePath, UpdateSourceTrigger=PropertyChanged}" />
+                            <Button Grid.Column="2" Content="Chọn..." Style="{StaticResource SecondaryButton}" Command="{Binding BrowseExcelFileCommand}" />
+                        </Grid>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Button Grid.Column="0"
+                                    Content="Lưu ảnh &amp; Ghi Excel"
+                                    Style="{StaticResource PrimaryButton}"
+                                    Command="{Binding ExportSelectedCommand}" />
+                            <Button Grid.Column="2"
+                                    Content="Xuất tất cả"
+                                    Style="{StaticResource SecondaryButton}"
+                                    Command="{Binding ExportAllOfEmployeeCommand}" />
+                        </Grid>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>
