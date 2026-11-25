@@ -25,10 +25,10 @@
   <!-- Build .NET 4.8 LuxandBridge and stage it into bridge\ for all consumers (App, Tests, Publish) -->
   <Target Name="StageLuxandBridgeFiles" BeforeTargets="AssignTargetPaths">
     <MSBuild Projects="..\SpartonFaceAdmin.Bridge\SpartonFaceAdmin.Bridge.csproj"
-             Properties="Configuration=$(Configuration);Platform=$(Platform)"
+             Properties="Configuration=$(Configuration);Platform=x64"
              Targets="Restore;Build" />
     <ItemGroup>
-      <_BridgeOutputFiles Include="..\SpartonFaceAdmin.Bridge\bin\$(Platform)\$(Configuration)\net48\**\*.*" />
+      <_BridgeOutputFiles Include="..\SpartonFaceAdmin.Bridge\bin\x64\$(Configuration)\net48\**\*.*" />
       <Content Include="@(_BridgeOutputFiles)">
         <Link>bridge\%(RecursiveDir)%(Filename)%(Extension)</Link>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
