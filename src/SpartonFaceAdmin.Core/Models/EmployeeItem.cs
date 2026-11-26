@@ -48,8 +48,21 @@ public static class UserGroupOption
     public const string Office = "Office";
     public const string Operator = "Operator";
     public const string Security = "Security";
-    public const string OutsideServices = "Outside Services";
+    public const string Janitor = "Janitor";
+    public const string Driver = "Driver";
+    public const string KitchenAttendant = "Kitchen Attendant";
+    public const string GarbageCollector = "Garbage Collector";
+    public const string BonsaiCaretaker = "Bonsai Caretaker";
 
-    public static IReadOnlyList<string> All { get; } =
-        new[] { Office, Operator, Security, OutsideServices };
+    public static IReadOnlyList<string> All { get; } = new[]
+    {
+        Office,
+        Operator,
+        Security,
+        Janitor,
+        Driver,
+        KitchenAttendant,
+        GarbageCollector,
+        BonsaiCaretaker
+    };
 }
