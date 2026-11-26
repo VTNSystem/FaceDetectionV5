@@ -30,7 +30,7 @@ internal sealed class LuxandEngineService : IDisposable
             if (init != FSDK.FSDKE_OK)
                 throw new InvalidOperationException($"FSDK.InitializeLibrary failed with code {init}");
 
-            FSDK.SetFaceDetectionThreshold(5);
+            FSDK.SetFaceDetectionThreshold(3);
             FSDK.SetFaceDetectionParameters(true, true, 512);
 
             int err = 0;

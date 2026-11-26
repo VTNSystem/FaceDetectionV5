@@ -373,25 +373,39 @@ public sealed partial class EnrollmentViewModel : ObservableObject
 
         _ = Task.Run(async () =>
         {
-            try
-            {
-                await foreach (CameraFrameData frame in runner.DetectionFrames.ReadAllAsync(ct))
-                {
-                    if (!IsCameraRunning)
-                        break;
+            bool errorNotified = false;
 
-                    byte[] previewJpeg = FrameEncodingHelper.EncodeBgr24ToDownscaledJpeg(frame, maxWidth: 480);
-                    BridgeResponse res = await _bridgeClient.DetectOnlyAsync(previewJpeg, 5, ct);
+            await foreach (CameraFrameData frame in runner.DetectionFrames.ReadAllAsync(ct))
+            {
+                if (!IsCameraRunning || ct.IsCancellationRequested)
+                    break;
+
+                try
+                {
+                    byte[] previewJpeg = FrameEncodingHelper.EncodeBgr24ToDownscaledJpeg(frame, maxWidth: 640, quality: 85);
+                    BridgeResponse res = await _bridgeClient.DetectOnlyAsync(previewJpeg, threshold: 3, ct);
 
                     await _dispatcher.InvokeAsync(() =>
                     {
                         if (!IsCameraRunning)
                             return;
 
-                        if (res.Success && res.FaceDetected && res.FaceBox != null && res.ImageWidth > 0 && res.ImageHeight > 0)
+                        if (!res.Success)
                         {
-                            double scaleX = FramePixelWidth / res.ImageWidth;
-                            double scaleY = FramePixelHeight / res.ImageHeight;
+                            HasDetectedFace = false;
+                            if (!errorNotified)
+                            {
+                                errorNotified = true;
+                                Serilog.Log.Warning("Live detection returned error: {Error}", res.ErrorMessage);
+                                _toast.Show($"Lỗi nhận diện mặt: {res.ErrorMessage}", ToastKind.Warning, 3500);
+                            }
+                            return;
+                        }
+
+                        if (res.FaceDetected && res.FaceBox != null && res.ImageWidth > 0 && res.ImageHeight > 0)
+                        {
+                            double scaleX = (double)frame.Width / res.ImageWidth;
+                            double scaleY = (double)frame.Height / res.ImageHeight;
                             double size = res.FaceBox.W * 1.2 * scaleX;
                             FaceLeft = (res.FaceBox.Xc * scaleX) - (size / 2.0);
                             FaceTop = (res.FaceBox.Yc * scaleY) - (size / 2.0);
@@ -404,9 +418,21 @@ public sealed partial class EnrollmentViewModel : ObservableObject
                         }
                     });
                 }
+                catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    Serilog.Log.Warning(ex, "Live face detection frame failed.");
+                    if (!errorNotified)
+                    {
+                        errorNotified = true;
+                        _ = _dispatcher.InvokeAsync(() =>
+                            _toast.Show($"Lỗi nhận diện mặt: {ex.Message}", ToastKind.Warning, 3500));
+                    }
+                }
             }
-            catch (OperationCanceledException) { }
-            catch { }
         }, ct);
     }
 
@@ -443,7 +469,7 @@ public sealed partial class EnrollmentViewModel : ObservableObject
             FramePixelHeight = bmp.PixelHeight;
             HasPreviewContent = true;
 
-            BridgeResponse res = await _bridgeClient.DetectOnlyAsync(bytes, 5);
+            BridgeResponse res = await _bridgeClient.DetectOnlyAsync(bytes, threshold: 3);
             if (res.Success && res.FaceDetected && res.FaceBox != null)
             {
                 double size = res.FaceBox.W * 1.2;
@@ -520,7 +546,7 @@ public sealed partial class EnrollmentViewModel : ObservableObject
         IsBusy = true;
         try
         {
-            BridgeResponse extracted = await _bridgeClient.ExtractTemplateAsync(payloadBytes, 5);
+            BridgeResponse extracted = await _bridgeClient.ExtractTemplateAsync(payloadBytes, threshold: 3);
             if (!extracted.Success)
             {
                 _toast.Show($"Lỗi nhận diện: {extracted.ErrorMessage}", ToastKind.Error, 3500);

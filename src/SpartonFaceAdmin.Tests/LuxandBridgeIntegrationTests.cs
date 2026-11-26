@@ -39,4 +39,23 @@ public sealed class LuxandBridgeIntegrationTests
         Assert.Equal(0xFF, jpeg[0]);
         Assert.Equal(0xD8, jpeg[1]);
     }
+
+    [Fact]
+    public async Task BackgroundThread_DownscaledEncoding_AndBridgeDetection_Succeeds()
+    {
+        await using var client = new LuxandBridgeClient();
+        var frame = new CameraFrameData(1280, 720, 1280 * 3, new byte[1280 * 720 * 3]);
+
+        // Run on MTA threadpool thread exactly like StartDetectionLoop to ensure no WPF/WIC STA issues.
+        var response = await Task.Run(async () =>
+        {
+            byte[] jpeg = FrameEncodingHelper.EncodeBgr24ToDownscaledJpeg(frame, maxWidth: 640, quality: 85);
+            return await client.DetectOnlyAsync(jpeg, threshold: 3);
+        });
+
+        Assert.True(response.Success, response.ErrorMessage);
+        Assert.False(response.FaceDetected);
+        Assert.Equal(640, response.ImageWidth);
+        Assert.Equal(360, response.ImageHeight);
+    }
 }
