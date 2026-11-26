@@ -35,12 +35,21 @@ public sealed class EnumEqualsConverter : IValueConverter
             : Binding.DoNothing;
 }
 
+public sealed class SidebarWidthConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is true ? new GridLength(68) : new GridLength(232);
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
 public sealed class StatusDotBrushConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
         value is true
-            ? Application.Current.FindResource("SuccessBrush")
-            : Application.Current.FindResource("DangerBrush");
+            ? new SolidColorBrush(Color.FromRgb(0x22, 0xC5, 0x5E))
+            : new SolidColorBrush(Color.FromRgb(0xF8, 0x71, 0x71));
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
         throw new NotSupportedException();
@@ -53,12 +62,12 @@ public sealed class ToastBrushConverter : IValueConverter
         return value is ToastKind kind
             ? kind switch
             {
-                ToastKind.Success => new SolidColorBrush(Color.FromRgb(0x06, 0x5F, 0x46)),
-                ToastKind.Warning => new SolidColorBrush(Color.FromRgb(0x92, 0x40, 0x0E)),
-                ToastKind.Error => new SolidColorBrush(Color.FromRgb(0x99, 0x1B, 0x1B)),
-                _ => new SolidColorBrush(Color.FromRgb(0x00, 0x34, 0x70))
+                ToastKind.Success => new SolidColorBrush(Color.FromRgb(0x11, 0x6B, 0x34)),
+                ToastKind.Warning => new SolidColorBrush(Color.FromRgb(0xB5, 0x47, 0x08)),
+                ToastKind.Error => new SolidColorBrush(Color.FromRgb(0xB4, 0x23, 0x18)),
+                _ => new SolidColorBrush(Color.FromRgb(0x1E, 0x4E, 0x8C))
             }
-            : new SolidColorBrush(Color.FromRgb(0x00, 0x34, 0x70));
+            : new SolidColorBrush(Color.FromRgb(0x1E, 0x4E, 0x8C));
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>

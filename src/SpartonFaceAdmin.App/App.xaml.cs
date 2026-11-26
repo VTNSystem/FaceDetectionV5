@@ -4,6 +4,7 @@ using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using SpartonFaceAdmin.App.Services;
+using SpartonFaceAdmin.App.Themes;
 using SpartonFaceAdmin.App.ViewModels;
 using SpartonFaceAdmin.App.Views;
 using SpartonFaceAdmin.Infrastructure.Bridge;
@@ -44,6 +45,8 @@ public partial class App : Application
         var services = new ServiceCollection();
         ConfigureServices(services);
         _services = services.BuildServiceProvider();
+
+        SpartronicsAppearance.Apply();
 
         MainWindow window = _services.GetRequiredService<MainWindow>();
         window.Show();

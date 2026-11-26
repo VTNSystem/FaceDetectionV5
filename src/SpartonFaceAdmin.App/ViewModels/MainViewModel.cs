@@ -26,6 +26,12 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private object _currentViewModel;
 
+    [ObservableProperty]
+    private bool _isSidebarCollapsed;
+
+    [RelayCommand]
+    private void ToggleSidebar() => IsSidebarCollapsed = !IsSidebarCollapsed;
+
     public EnrollmentViewModel EnrollmentVm { get; }
     public FaceListViewModel FaceListVm { get; }
     public SettingsViewModel SettingsVm { get; }

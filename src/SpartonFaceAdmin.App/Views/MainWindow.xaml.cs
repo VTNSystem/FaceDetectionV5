@@ -1,9 +1,10 @@
 using System.Windows;
 using SpartonFaceAdmin.App.ViewModels;
+using Wpf.Ui.Controls;
 
 namespace SpartonFaceAdmin.App.Views;
 
-public partial class MainWindow : Window
+public partial class MainWindow : FluentWindow
 {
     private readonly MainViewModel _viewModel;
 
