@@ -131,20 +131,14 @@
     </Style>
     <Style TargetType="ui:Button" BasedOn="{StaticResource SpartronicsUiButtonStyle}" />
 
-    <!-- TitleBar & Caption Buttons (matching ShippingTheme.xaml) -->
-    <Style x:Key="CaptionButtonStyle" TargetType="ui:TitleBarButton" BasedOn="{StaticResource {x:Type ui:TitleBarButton}}" />
+    <!-- TitleBar (keyed style only — placing an implicit ui:TitleBar style in the same dictionary would cycle and drop WPF-UI's ControlTemplate) -->
     <Style x:Key="SpartronicsTitleBar" TargetType="ui:TitleBar" BasedOn="{StaticResource {x:Type ui:TitleBar}}">
         <Setter Property="Background" Value="{StaticResource BrandNavyBrush}" />
         <Setter Property="Foreground" Value="White" />
         <Setter Property="ButtonsForeground" Value="White" />
-    </Style>
-    <Style TargetType="ui:TitleBar" BasedOn="{StaticResource SpartronicsTitleBar}" />
-    <Style TargetType="ui:TitleBarButton" BasedOn="{StaticResource CaptionButtonStyle}">
-        <Style.Triggers>
-            <Trigger Property="ButtonType" Value="{x:Static ui:TitleBarButtonType.Close}">
-                <Setter Property="ButtonsForeground" Value="{StaticResource TitleBarCloseBrush}" />
-            </Trigger>
-        </Style.Triggers>
+        <Setter Property="FontFamily" Value="Segoe UI" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
 
     <Style TargetType="TextBox" BasedOn="{StaticResource DefaultTextBoxStyle}">
@@ -168,6 +162,8 @@
         <Setter Property="MinHeight" Value="36" />
         <Setter Property="MaxDropDownHeight" Value="320" />
         <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Visible" />
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
         <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True" />
         <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
         <Setter Property="ItemsPanel">
@@ -211,6 +207,7 @@
         <Setter Property="EnableRowVirtualization" Value="True" />
         <Setter Property="EnableColumnVirtualization" Value="True" />
         <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
     </Style>
     <Style TargetType="ui:DataGrid" BasedOn="{StaticResource OperationalDataGrid}" />
 

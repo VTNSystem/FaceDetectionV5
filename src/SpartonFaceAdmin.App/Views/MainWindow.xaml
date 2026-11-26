@@ -36,13 +36,43 @@
     </Window.Resources>
 
     <DockPanel>
-        <!-- Unified Rework/FQC Navy TitleBar -->
+        <!-- Unified Spartronics Navy TitleBar with App Actions & Window Controls -->
         <ui:TitleBar DockPanel.Dock="Top"
+                     Style="{StaticResource SpartronicsTitleBar}"
                      Title="Spartronics Face Detection"
-                     Height="40">
+                     Height="42"
+                     ShowMinimize="True"
+                     ShowMaximize="True"
+                     ShowClose="True">
             <ui:TitleBar.Icon>
-                <ui:ImageIcon Source="pack://application:,,,/Assets/face-locker-icon.ico" />
+                <ui:ImageIcon Source="pack://application:,,,/Assets/face-locker-icon.ico"
+                              Width="18"
+                              Height="18" />
             </ui:TitleBar.Icon>
+            <ui:TitleBar.TrailingContent>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,6,0">
+                    <ui:Button Appearance="Transparent"
+                               Foreground="White"
+                               MouseOverBackground="{StaticResource TitleBarButtonHoverBrush}"
+                               Command="{Binding RefreshEmployeesAndHealthCommand}"
+                               ToolTip="Làm mới kết nối &amp; danh sách nhân viên"
+                               MinHeight="30"
+                               Padding="8,4"
+                               Margin="0,0,2,0">
+                        <ui:SymbolIcon Symbol="ArrowClockwise20" Foreground="White" FontSize="15" />
+                    </ui:Button>
+                    <ui:Button Appearance="Transparent"
+                               Foreground="White"
+                               MouseOverBackground="{StaticResource TitleBarButtonHoverBrush}"
+                               Command="{Binding NavigateCommand}"
+                               CommandParameter="{x:Static vm:NavSection.Settings}"
+                               ToolTip="Cài đặt hệ thống"
+                               MinHeight="30"
+                               Padding="8,4">
+                        <ui:SymbolIcon Symbol="Settings20" Foreground="White" FontSize="15" />
+                    </ui:Button>
+                </StackPanel>
+            </ui:TitleBar.TrailingContent>
         </ui:TitleBar>
 
         <Grid>
