@@ -260,6 +260,9 @@
         <Setter Property="FontWeight" Value="Medium" />
         <Setter Property="Height" Value="42" />
         <Setter Property="Margin" Value="8,2" />
+        <Setter Property="Padding" Value="14,0,10,0" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="Template">
             <Setter.Value>
@@ -268,20 +271,16 @@
                             Background="{TemplateBinding Background}"
                             CornerRadius="6">
                         <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="3" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
                             <Border x:Name="AccentRail"
-                                    Grid.Column="0"
+                                    HorizontalAlignment="Left"
+                                    Width="3"
                                     Margin="0,7"
                                     CornerRadius="2"
                                     Background="{StaticResource BrandCyanBrush}"
                                     Visibility="Collapsed" />
-                            <ContentPresenter Grid.Column="1"
-                                              Margin="11,0"
-                                              VerticalAlignment="Center"
-                                              HorizontalAlignment="Stretch"
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                               TextElement.Foreground="{TemplateBinding Foreground}" />
                         </Grid>
                     </Border>
@@ -300,5 +299,12 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding DataContext.IsSidebarCollapsed, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="Margin" Value="10,2" />
+            </DataTrigger>
+        </Style.Triggers>
     </Style>
 </ResourceDictionary>

@@ -36,7 +36,7 @@
     </Window.Resources>
 
     <DockPanel>
-        <!-- Unified Spartronics Navy TitleBar with App Actions & Window Controls -->
+        <!-- Unified Spartronics Navy TitleBar -->
         <ui:TitleBar DockPanel.Dock="Top"
                      Style="{StaticResource SpartronicsTitleBar}"
                      Title="Spartronics Face Detection"
@@ -49,30 +49,6 @@
                               Width="18"
                               Height="18" />
             </ui:TitleBar.Icon>
-            <ui:TitleBar.TrailingContent>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,6,0">
-                    <ui:Button Appearance="Transparent"
-                               Foreground="White"
-                               MouseOverBackground="{StaticResource TitleBarButtonHoverBrush}"
-                               Command="{Binding RefreshEmployeesAndHealthCommand}"
-                               ToolTip="Làm mới kết nối &amp; danh sách nhân viên"
-                               MinHeight="30"
-                               Padding="8,4"
-                               Margin="0,0,2,0">
-                        <ui:SymbolIcon Symbol="ArrowClockwise20" Foreground="White" FontSize="15" />
-                    </ui:Button>
-                    <ui:Button Appearance="Transparent"
-                               Foreground="White"
-                               MouseOverBackground="{StaticResource TitleBarButtonHoverBrush}"
-                               Command="{Binding NavigateCommand}"
-                               CommandParameter="{x:Static vm:NavSection.Settings}"
-                               ToolTip="Cài đặt hệ thống"
-                               MinHeight="30"
-                               Padding="8,4">
-                        <ui:SymbolIcon Symbol="Settings20" Foreground="White" FontSize="15" />
-                    </ui:Button>
-                </StackPanel>
-            </ui:TitleBar.TrailingContent>
         </ui:TitleBar>
 
         <Grid>
@@ -93,13 +69,7 @@
                             BorderThickness="0,0,0,1"
                             Padding="10,12">
                         <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-
-                            <StackPanel Grid.Column="0"
-                                        Margin="0,0,8,0"
+                            <StackPanel Margin="0,0,40,0"
                                         Visibility="{Binding IsSidebarCollapsed, Converter={StaticResource InverseBoolToVis}}">
                                 <Border Background="White" CornerRadius="6" Padding="8,5">
                                     <Image Source="pack://application:,,,/Assets/spartronics-logo.png"
@@ -114,17 +84,34 @@
                                            Margin="2,7,0,0" />
                             </StackPanel>
 
-                            <ui:Button Grid.Column="1"
-                                       Appearance="Transparent"
+                            <ui:Button Appearance="Transparent"
                                        Foreground="White"
                                        MouseOverBackground="{StaticResource TitleBarButtonHoverBrush}"
                                        Command="{Binding ToggleSidebarCommand}"
                                        ToolTip="Thu gọn / Mở rộng menu"
-                                       Padding="8"
-                                       MinHeight="32"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Top">
-                                <ui:SymbolIcon Symbol="Navigation24" Foreground="White" FontSize="18" />
+                                       Width="36"
+                                       Height="36"
+                                       MinHeight="36"
+                                       Padding="0"
+                                       HorizontalContentAlignment="Center"
+                                       VerticalContentAlignment="Center">
+                                <ui:Button.Style>
+                                    <Style TargetType="ui:Button" BasedOn="{StaticResource SpartronicsUiButtonStyle}">
+                                        <Setter Property="HorizontalAlignment" Value="Right" />
+                                        <Setter Property="VerticalAlignment" Value="Top" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsSidebarCollapsed}" Value="True">
+                                                <Setter Property="HorizontalAlignment" Value="Center" />
+                                                <Setter Property="VerticalAlignment" Value="Center" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ui:Button.Style>
+                                <ui:SymbolIcon Symbol="Navigation24"
+                                               Foreground="White"
+                                               FontSize="18"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center" />
                             </ui:Button>
                         </Grid>
                     </Border>
@@ -181,8 +168,13 @@
                                            MouseOverBackground="{StaticResource TitleBarButtonHoverBrush}"
                                            Command="{Binding RefreshEmployeesAndHealthCommand}"
                                            ToolTip="Làm mới kết nối"
-                                           Padding="6"
-                                           MinHeight="30">
+                                           Width="36"
+                                           Height="36"
+                                           MinHeight="36"
+                                           Padding="0"
+                                           HorizontalAlignment="Center"
+                                           HorizontalContentAlignment="Center"
+                                           VerticalContentAlignment="Center">
                                     <ui:SymbolIcon Symbol="ArrowClockwise20" Foreground="{StaticResource BrandCyanBrush}" FontSize="16" />
                                 </ui:Button>
                             </StackPanel>
