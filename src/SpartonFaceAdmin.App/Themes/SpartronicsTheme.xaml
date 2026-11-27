@@ -151,6 +151,7 @@
     </Style>
     <Style TargetType="PasswordBox" BasedOn="{StaticResource DefaultPasswordBoxStyle}">
         <Setter Property="MinHeight" Value="36" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
     <Style TargetType="ui:PasswordBox" BasedOn="{StaticResource DefaultUiPasswordBoxStyle}">
         <Setter Property="MinHeight" Value="36" />

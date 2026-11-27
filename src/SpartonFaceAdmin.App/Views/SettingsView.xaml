@@ -65,7 +65,7 @@
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
                                         <TextBlock Text="Password" Style="{StaticResource FieldLabel}" />
-                                        <ui:PasswordBox x:Name="PbHrPassword" PasswordChanged="PbHrPassword_PasswordChanged" />
+                                        <PasswordBox x:Name="PbHrPassword" PasswordChanged="PbHrPassword_PasswordChanged" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="4">
                                         <TextBlock Text="Timeout (s)" Style="{StaticResource FieldLabel}" />
@@ -111,7 +111,7 @@
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
                                         <TextBlock Text="Password" Style="{StaticResource FieldLabel}" />
-                                        <ui:PasswordBox x:Name="PbFacePassword" PasswordChanged="PbFacePassword_PasswordChanged" />
+                                        <PasswordBox x:Name="PbFacePassword" PasswordChanged="PbFacePassword_PasswordChanged" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="4">
                                         <TextBlock Text="Timeout (s)" Style="{StaticResource FieldLabel}" />
@@ -220,7 +220,7 @@
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
                                         <TextBlock Text="Password" Style="{StaticResource FieldLabel}" />
-                                        <ui:PasswordBox x:Name="PbIpCamPassword" PasswordChanged="PbIpCamPassword_PasswordChanged" />
+                                        <PasswordBox x:Name="PbIpCamPassword" PasswordChanged="PbIpCamPassword_PasswordChanged" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="4">
                                         <TextBlock Text="Timeout (s)" Style="{StaticResource FieldLabel}" />

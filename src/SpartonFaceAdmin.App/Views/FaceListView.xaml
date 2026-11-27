@@ -18,28 +18,34 @@
         <Border Grid.Row="0" Style="{StaticResource Card}" Padding="12">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="260" />
-                    <ColumnDefinition Width="10" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="10" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <ui:TextBox Grid.Column="0"
-                            Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                            PlaceholderText="Tìm mã hoặc tên nhân viên...">
-                    <ui:TextBox.Icon>
-                        <ui:SymbolIcon Symbol="Search20" />
-                    </ui:TextBox.Icon>
-                </ui:TextBox>
+                <Grid Grid.Column="0">
+                    <ComboBox x:Name="CbEmployeeSearch"
+                              Style="{StaticResource VirtualizedComboBox}"
+                              ItemsSource="{Binding FilteredEmployees}"
+                              SelectedItem="{Binding SelectedEmployee, Mode=TwoWay}"
+                              DisplayMemberPath="DisplayLabel"
+                              TextSearch.TextPath="DisplayLabel"
+                              IsEditable="True"
+                              IsTextSearchEnabled="False"
+                              StaysOpenOnEdit="True"
+                              DropDownOpened="CbEmployeeSearch_DropDownOpened"
+                              SelectionChanged="CbEmployeeSearch_SelectionChanged" />
+                    <TextBlock x:Name="TxtEmployeePlaceholder"
+                               Text="Tìm mã/tên hoặc chọn nhân viên..."
+                               IsHitTestVisible="False"
+                               VerticalAlignment="Center"
+                               Margin="12,0,36,0"
+                               FontSize="13"
+                               Foreground="{StaticResource SecondaryTextBrush}"
+                               Opacity="0.7" />
+                </Grid>
 
-                <ComboBox Grid.Column="2"
-                          Style="{StaticResource VirtualizedComboBox}"
-                          ItemsSource="{Binding FilteredEmployees}"
-                          SelectedItem="{Binding SelectedEmployee, Mode=TwoWay}"
-                          DisplayMemberPath="DisplayLabel" />
-
-                <ui:Button Grid.Column="4"
+                <ui:Button Grid.Column="2"
                            Content="Xóa tất cả"
                            Appearance="Danger"
                            Command="{Binding DeleteAllForEmployeeCommand}"
