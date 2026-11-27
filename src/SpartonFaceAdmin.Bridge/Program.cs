@@ -80,8 +80,8 @@ internal static class Program
                 await server.WaitForConnectionAsync(ct).ConfigureAwait(false);
                 while (server.IsConnected && !ct.IsCancellationRequested)
                 {
-                    BridgeRequest? req = await LengthPrefixedJsonPipe
-                        .ReadMessageAsync<BridgeRequest>(server, ct)
+                    BridgeRequest? req = await BridgePipeProtocol
+                        .ReadRequestAsync(server, ct)
                         .ConfigureAwait(false);
 
                     if (req == null)
@@ -89,7 +89,7 @@ internal static class Program
 
                     if (req.Command == BridgeCommand.Shutdown)
                     {
-                        await LengthPrefixedJsonPipe.WriteMessageAsync(
+                        await BridgePipeProtocol.WriteResponseAsync(
                             server,
                             new BridgeResponse { Success = true },
                             ct).ConfigureAwait(false);
@@ -97,16 +97,16 @@ internal static class Program
                     }
 
                     BridgeResponse res = engine.Handle(req);
-                    await LengthPrefixedJsonPipe.WriteMessageAsync(server, res, ct).ConfigureAwait(false);
+                    await BridgePipeProtocol.WriteResponseAsync(server, res, ct).ConfigureAwait(false);
                 }
             }
             catch (OperationCanceledException)
             {
                 break;
             }
-            catch
+            catch (Exception ex)
             {
-                // Client disconnected; accept next connection unless cancelled.
+                Trace.TraceWarning($"Bridge pipe session ended: {ex}");
             }
         }
     }

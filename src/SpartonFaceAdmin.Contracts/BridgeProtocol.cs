@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Text;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -52,39 +51,196 @@ public sealed class BridgeResponse
 }
 
 /// <summary>
-/// Length-prefixed UTF-8 JSON framing over NamedPipeStream to prevent partial-read corruption.
+/// Zero-dependency length-prefixed binary framing over NamedPipeStream.
+/// Avoids System.Text.Json / NuGet binding redirects in the .NET Framework 4.8 bridge
+/// so ClickOnce and folder publishes never fail with "Pipe is broken".
 /// </summary>
-public static class LengthPrefixedJsonPipe
+public static class BridgePipeProtocol
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    };
+    private const int MaxPayloadBytes = 64 * 1024 * 1024;
 
-    public static async Task WriteMessageAsync<T>(Stream stream, T payload, CancellationToken cancellationToken)
+    public static async Task WriteRequestAsync(Stream stream, BridgeRequest request, CancellationToken cancellationToken)
     {
-        byte[] body = JsonSerializer.SerializeToUtf8Bytes(payload, SerializerOptions);
+        using var ms = new MemoryStream();
+        using (var bw = new BinaryWriter(ms, Encoding.UTF8, leaveOpen: true))
+        {
+            bw.Write((int)request.Command);
+            bw.Write(request.DetectionThreshold);
+            WriteBytes(bw, request.ImageBytes);
+        }
+
+        await WriteFrameAsync(stream, ms.ToArray(), cancellationToken).ConfigureAwait(false);
+    }
+
+    public static async Task<BridgeRequest?> ReadRequestAsync(Stream stream, CancellationToken cancellationToken)
+    {
+        byte[]? body = await ReadFrameAsync(stream, cancellationToken).ConfigureAwait(false);
+        if (body == null)
+            return null;
+
+        using var ms = new MemoryStream(body);
+        using var br = new BinaryReader(ms, Encoding.UTF8, leaveOpen: false);
+
+        return new BridgeRequest
+        {
+            Command = (BridgeCommand)br.ReadInt32(),
+            DetectionThreshold = br.ReadInt32(),
+            ImageBytes = ReadBytes(br)
+        };
+    }
+
+    public static async Task WriteResponseAsync(Stream stream, BridgeResponse response, CancellationToken cancellationToken)
+    {
+        using var ms = new MemoryStream();
+        using (var bw = new BinaryWriter(ms, Encoding.UTF8, leaveOpen: true))
+        {
+            bw.Write(response.Success);
+            WriteNullableString(bw, response.ErrorMessage);
+            bw.Write(response.FaceDetected);
+            bw.Write(response.ImageWidth);
+            bw.Write(response.ImageHeight);
+
+            bw.Write(response.FaceBox != null);
+            if (response.FaceBox != null)
+            {
+                bw.Write(response.FaceBox.Xc);
+                bw.Write(response.FaceBox.Yc);
+                bw.Write(response.FaceBox.W);
+                bw.Write(response.FaceBox.Angle);
+            }
+
+            bw.Write(response.Eye1 != null);
+            if (response.Eye1 != null)
+            {
+                bw.Write(response.Eye1.X);
+                bw.Write(response.Eye1.Y);
+            }
+
+            bw.Write(response.Eye2 != null);
+            if (response.Eye2 != null)
+            {
+                bw.Write(response.Eye2.X);
+                bw.Write(response.Eye2.Y);
+            }
+
+            WriteBytes(bw, response.Template);
+            WriteBytes(bw, response.FullImageJpeg);
+            WriteBytes(bw, response.FaceImageJpeg);
+        }
+
+        await WriteFrameAsync(stream, ms.ToArray(), cancellationToken).ConfigureAwait(false);
+    }
+
+    public static async Task<BridgeResponse?> ReadResponseAsync(Stream stream, CancellationToken cancellationToken)
+    {
+        byte[]? body = await ReadFrameAsync(stream, cancellationToken).ConfigureAwait(false);
+        if (body == null)
+            return null;
+
+        using var ms = new MemoryStream(body);
+        using var br = new BinaryReader(ms, Encoding.UTF8, leaveOpen: false);
+
+        var res = new BridgeResponse
+        {
+            Success = br.ReadBoolean(),
+            ErrorMessage = ReadNullableString(br),
+            FaceDetected = br.ReadBoolean(),
+            ImageWidth = br.ReadInt32(),
+            ImageHeight = br.ReadInt32()
+        };
+
+        if (br.ReadBoolean())
+        {
+            res.FaceBox = new FaceBoxDto
+            {
+                Xc = br.ReadInt32(),
+                Yc = br.ReadInt32(),
+                W = br.ReadInt32(),
+                Angle = br.ReadSingle()
+            };
+        }
+
+        if (br.ReadBoolean())
+        {
+            res.Eye1 = new EyePointDto
+            {
+                X = br.ReadInt32(),
+                Y = br.ReadInt32()
+            };
+        }
+
+        if (br.ReadBoolean())
+        {
+            res.Eye2 = new EyePointDto
+            {
+                X = br.ReadInt32(),
+                Y = br.ReadInt32()
+            };
+        }
+
+        res.Template = ReadBytes(br);
+        res.FullImageJpeg = ReadBytes(br);
+        res.FaceImageJpeg = ReadBytes(br);
+        return res;
+    }
+
+    private static void WriteBytes(BinaryWriter bw, byte[]? data)
+    {
+        if (data == null)
+        {
+            bw.Write(-1);
+            return;
+        }
+        bw.Write(data.Length);
+        if (data.Length > 0)
+            bw.Write(data);
+    }
+
+    private static byte[]? ReadBytes(BinaryReader br)
+    {
+        int len = br.ReadInt32();
+        if (len < 0)
+            return null;
+        if (len == 0)
+            return Array.Empty<byte>();
+        return br.ReadBytes(len);
+    }
+
+    private static void WriteNullableString(BinaryWriter bw, string? value)
+    {
+        bw.Write(value != null);
+        if (value != null)
+            bw.Write(value);
+    }
+
+    private static string? ReadNullableString(BinaryReader br)
+    {
+        return br.ReadBoolean() ? br.ReadString() : null;
+    }
+
+    private static async Task WriteFrameAsync(Stream stream, byte[] body, CancellationToken cancellationToken)
+    {
         byte[] lenPrefix = BitConverter.GetBytes(body.Length);
         await stream.WriteAsync(lenPrefix, 0, 4, cancellationToken).ConfigureAwait(false);
         await stream.WriteAsync(body, 0, body.Length, cancellationToken).ConfigureAwait(false);
         await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public static async Task<T?> ReadMessageAsync<T>(Stream stream, CancellationToken cancellationToken)
+    private static async Task<byte[]?> ReadFrameAsync(Stream stream, CancellationToken cancellationToken)
     {
         byte[] lenPrefix = new byte[4];
         if (!await ReadExactAsync(stream, lenPrefix, 4, cancellationToken).ConfigureAwait(false))
-            return default;
+            return null;
 
         int length = BitConverter.ToInt32(lenPrefix, 0);
-        if (length <= 0 || length > 64 * 1024 * 1024)
+        if (length <= 0 || length > MaxPayloadBytes)
             throw new InvalidDataException($"Invalid IPC message length: {length}");
 
         byte[] body = new byte[length];
         if (!await ReadExactAsync(stream, body, length, cancellationToken).ConfigureAwait(false))
-            return default;
+            return null;
 
-        return JsonSerializer.Deserialize<T>(body, SerializerOptions);
+        return body;
     }
 
     private static async Task<bool> ReadExactAsync(Stream stream, byte[] buffer, int count, CancellationToken cancellationToken)

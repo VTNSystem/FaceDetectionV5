@@ -60,9 +60,9 @@ public sealed class LuxandBridgeClient : IAsyncDisposable
                 try
                 {
                     await EnsureConnectedAsync(cancellationToken).ConfigureAwait(false);
-                    await LengthPrefixedJsonPipe.WriteMessageAsync(_pipe!, request, cancellationToken).ConfigureAwait(false);
-                    BridgeResponse? response = await LengthPrefixedJsonPipe
-                        .ReadMessageAsync<BridgeResponse>(_pipe!, cancellationToken)
+                    await BridgePipeProtocol.WriteRequestAsync(_pipe!, request, cancellationToken).ConfigureAwait(false);
+                    BridgeResponse? response = await BridgePipeProtocol
+                        .ReadResponseAsync(_pipe!, cancellationToken)
                         .ConfigureAwait(false);
 
                     if (response != null)
@@ -166,7 +166,7 @@ public sealed class LuxandBridgeClient : IAsyncDisposable
                 try
                 {
                     using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(1));
-                    await LengthPrefixedJsonPipe.WriteMessageAsync(
+                    await BridgePipeProtocol.WriteRequestAsync(
                         _pipe,
                         new BridgeRequest { Command = BridgeCommand.Shutdown },
                         cts.Token).ConfigureAwait(false);

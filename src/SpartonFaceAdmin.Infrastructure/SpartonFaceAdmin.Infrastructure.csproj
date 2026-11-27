@@ -28,11 +28,13 @@
              Properties="Configuration=$(Configuration);Platform=x64"
              Targets="Restore;Build" />
     <ItemGroup>
-      <_BridgeOutputFiles Include="..\SpartonFaceAdmin.Bridge\bin\x64\$(Configuration)\net48\**\*.*" />
+      <_BridgeOutputFiles Include="..\SpartonFaceAdmin.Bridge\bin\x64\$(Configuration)\net48\**\*.*"
+                          Exclude="..\SpartonFaceAdmin.Bridge\bin\x64\$(Configuration)\net48\**\*.pdb;..\SpartonFaceAdmin.Bridge\bin\x64\$(Configuration)\net48\**\*.config" />
       <Content Include="@(_BridgeOutputFiles)">
         <Link>bridge\%(RecursiveDir)%(Filename)%(Extension)</Link>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
       </Content>
     </ItemGroup>
   </Target>
